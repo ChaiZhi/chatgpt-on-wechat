@@ -38,6 +38,8 @@ def auto_login(self, hotReload=False, statusStorageDir='itchat.pkl',
         self.login(enableCmdQR=enableCmdQR, picDir=picDir, qrCallback=qrCallback,
             loginCallback=loginCallback, exitCallback=exitCallback)
 
+empty_count = 0
+
 def configured_reply(self):
     ''' determine the type of message and reply if its method is defined
         however, I use a strange way to determine whether a msg is from massive platform
@@ -45,9 +47,25 @@ def configured_reply(self):
         The main problem I'm worrying about is the mismatching of new friends added on phone
         If you have any good idea, pleeeease report an issue. I will be more than grateful.
     '''
+    global empty_count
     try:
         msg = self.msgList.get(timeout=1)
     except Queue.Empty:
+        # print("Msg Queue Empty")
+        empty_count += 1
+        # print("empty_count:" + str(empty_count))
+        if empty_count % 300 == 0:
+            # print("Enter send msg")
+            empty_count = 1
+            from datetime import datetime
+
+            # 获取当前时间
+            now = datetime.now()
+
+            # 输出格式化的时间
+            formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
+            self.send(formatted_time, 'filehelper')
         pass
     else:
         if isinstance(msg['User'], templates.User):
@@ -99,6 +117,7 @@ def run(self, debug=False, blockThread=True):
             logger.debug('itchat received an ^C and exit.')
             logger.info('Bye~')
     if blockThread:
+        print("Enter reply with blockThread")
         reply_fn()
     else:
         replyThread = threading.Thread(target=reply_fn)
